@@ -1,6 +1,6 @@
 reCATPCHA Example 
 -----------------
-####This folder contains an example of a reCAPTCHA implementation. The original PerimeterX reCAPTCHA page has been customized, with a different color background, some icons and some colored texts.
+> This folder contains an example of a reCAPTCHA implementation. The original PerimeterX reCAPTCHA page has been customized, with a different color background, some icons and some colored texts.
 
 In order to use the contents of this page, first seperate the head and body tags from the rest of the html.
 
@@ -54,7 +54,7 @@ In order to use the contents of this page, first seperate the head and body tags
     <script src="https://www.google.com/recaptcha/api.js">
     </script>
     <!-- <script>
-        window.px_vid = "' .. vid .. '"; function handleCaptcha(response) { var name = "_pxCaptcha"; var expiryUtc = new Date( Date.now() + 1000 * 10 ).toUTCString(); var cookieParts = [name, "=", response + ":" + window.px_vid, "; expires=", expiryUtc, "; path=/"]; document.cookie = cookieParts.join(""); location.reload(); }
+        window.px_vid = "' .. vid .. '"; function handleCaptcha(response) { var name = "_pxCaptcha"; var expiryUtc = new Date( Date.now() + 1000 * 10 ).toUTCString(); var cookieParts = [name, "=", response + ":" + window.px_vid + ":' .. uuid .. '", "; expires=", expiryUtc, "; path=/"]; document.cookie = cookieParts.join(""); location.reload(); }
     </script> -->
 </head>
 
@@ -112,9 +112,3 @@ Repeat the same process for the body elemnt.
 
 Uncomment the `' .. ref_str ..'` part, and convert to a one-liner.
 Paste the one-liner into the `local body` variable.
-
-###Thats it, you are good to go !
-
-
-
-
