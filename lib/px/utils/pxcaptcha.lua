@@ -14,24 +14,22 @@ function M.load(config_file)
     local px_logger = require("px.utils.pxlogger").load(config_file)
     local px_constants = require "px.utils.pxconstants"
 
-    local cjson = require "cjson"
-    local string_gmatch = string.gmatch
     local auth_token = px_config.auth_token
     local captcha_api_path = px_constants.CAPTCHA_PATH
     local pcall = pcall
-    local ngx_req_get_headers = ngx.req.get_headers
 
-    -- split_captcha --
-    -- takes one argument - a value of pxCaptcha (vid:captcha)
-    -- returns two values - vid and captcha
-    local function split_cookie(cookie)
-        local a = {}
-        local b = 1
-        for i in string_gmatch(cookie, "[^:]+") do
-            a[b] = i
-            b = b + 1
+    local ngx_req_get_headers = ngx.req.get_headers
+    local function split_s(str, delimiter)
+        local result = {}
+        local from = 1
+        local delim_from, delim_to = string.find(str, delimiter, from)
+        while delim_from do
+            table.insert(result, string.sub(str, from, delim_from - 1))
+            from = delim_to + 1
+            delim_from, delim_to = string.find(str, delimiter, from)
         end
-        return a[1], a[2], a[3]
+        table.insert(result, string.sub(str, from))
+        return result
     end
 
     -- new_request_object --
@@ -52,11 +50,11 @@ function M.load(config_file)
         end
         captcha_reset.pxCaptcha = captcha;
         captcha_reset.hostname = ngx.var.host;
-        if vid and uuid then
+        if vid then
             captcha_reset.vid = vid
+        end
+        if uuid then
             captcha_reset.uuid = uuid
-        else
-            px_logger.error('VID and UUID not present for CAPTCHA. VID and UUID are required. Please check risk cookie policy')
         end
 
         px_logger.debug('CAPTCHA object completed')
@@ -70,21 +68,30 @@ function M.load(config_file)
         end
         px_logger.debug('Processing new CAPTCHA object');
 
-        local _captcha, vid, uuid = split_cookie(captcha)
-        if not _captcha or not vid or not uuid then
+        local split_cookie = split_s(captcha, ":")
+        if not split_cookie[1] then
             px_logger.debug('CAPTCHA content is not valid');
             return -1;
         end
+        local vid = '';
+        local uuid = '';
+        local _captcha = split_cookie[1]
+        if split_cookie[2] then
+            vid = split_cookie[2]
+        end
 
-        px_logger.debug('CAPTCHA value: ' .. _captcha);
-        px_logger.debug('uuid value: ' .. uuid);
+        if split_cookie[3] then
+            uuid = split_cookie[3]
+        end
 
         local request_data = new_captcha_request_object(_captcha, vid, uuid)
+        px_logger.debug('Sending Captcha API call to eval cookie');
         local success, response = pcall(px_api.call_s2s, request_data, captcha_api_path, auth_token)
         if success then
+            px_logger.debug('Captcha API call successfully returned');
             return response.status
         else
-            px_logger.error("Failed to connecto CAPTCHA API: " .. cjson.encode(response))
+            px_logger.error("Failed to connec to CAPTCHA API: " .. cjson.encode(response))
         end
         return -1;
     end
