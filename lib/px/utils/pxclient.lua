@@ -56,7 +56,10 @@ function _M.load(config_file)
         else
             px_logger.debug("POST response status: " .. res.status)
         end
+
         -- Must read the response body to clear the buffer in order for set keepalive to work properly.
+        local body = res:read_body()
+
         -- Check for connection reuse
         if px_debug == true then
             local times, err = httpc:get_reused_times()
@@ -91,6 +94,9 @@ function _M.load(config_file)
         pxdata['socket_ip'] = ngx.var.remote_addr;
         pxdata['details'] = details;
 
+        if event_type == 'page_requested' then
+            px_logger.debug("Sent page requested acitvity")
+        end
         -- Experimental Buffer Support --
         buffer.addEvent(pxdata)
         -- Perform the HTTP action
