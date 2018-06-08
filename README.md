@@ -10,12 +10,14 @@ Table of Contents
   *   [Dependencies](#dependencies)
   *   [Requirements](#requirements)
   *   [Installation](#installation)
+  *   [Installing on Amazon Linux](#awsinstall)
   *   [Basic Usage Example](#basic-usage)
 -   [Configuration](#configuration)
   *   [Blocking Score](#blocking-score)
   *   [Monitoring mode](#monitoring-mode)
   *   [Enable/Disable Captcha](#captcha-support)
   *   [Enabled Routes](#enabled-routes)
+  *   [Sensitive Routes](#sensitive-routes)
   *   [API Timeout](#api-timeout)
   *   [Send Page Activities](#send-page-activities)
   *   [Debug Mode](#debug-mode)
@@ -55,8 +57,38 @@ Installation can be done using [luarocks](https://luarocks.org/).
 $ luarocks install perimeterx-nginx-plugin
 ```
 
-Manual installation can accomplished by downoading the sources for this repository and running `sudo make install`.
+Manual installation can accomplished by downoading the sources for this repository and running `sudo make install`.  
 
+<a name="awsinstall"></a> Additional steps for installing on Amazon Linux
+----------------------------------------  
+### For Nginx+: 
+Install the lua modules provided by the Nginx team via yum as shown below as well as the CA certificates bundle which will be required when you configure Nginx.
+
+```
+yum -y install nginx-plus-module-lua ca-certificates.noarch
+```
+
+Download and compile nettle. 
+>> Side note: Use the version neccessary for your environment. 
+
+```
+yum -y install m4 # prerequisite for nettle
+cd /tmp/
+wget https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz
+tar -xzf nettle-3.3.tar.gz
+cd nettle-3.3
+./configure
+make clean && make install
+cd /usr/lib64 && ln -s /usr/local/lib64/libnettle.so . 
+```
+
+Make sure to change the path shown below in the "Lua CA Certificates" section as Amazon Linux stores the CA required in a different location than shown.
+
+If running Amazon Linux this is the trusted certificate path please use:  
+
+```
+lua_ssl_trusted_certificate "/etc/pki/tls/certs/ca-bundle.crt";
+```
 
 <a name="requirements"></a> NGINX Configuration File Requirements
 -----------------------------------------------
@@ -199,12 +231,23 @@ _M.captcha_enabled = false
 
 #### <a name="enabled-routes"></a> Enabled Routes
 
-The enabled routes variable allow you to implicitly define a set of routes which the plugin will be active on. Supplying an empty list will set all application routes as active.
+The enabled routes variable allows you to implicitly define a set of routes which the plugin will be active on. Supplying an empty list will set all application routes as active.
 
 **Default: Empty list (all routes)**
 
-```php
+```lua
 _M.enabled_routes = {'/blockhere'}
+```
+
+#### <a name="sensitive-routes"></a> Sensitive Routes
+
+Lists of route prefixes and suffixes. The PerimeterX module will always match the request URI with these lists, and if a match is found will create a server-to-server call, even if the cookie is valid and its score is low.
+
+**Default: Empty list**
+
+```lua
+_M.sensitive_routes_prefix = {'/login', '/user/profile'}
+_M.sensitive_routes_suffix = {'/download'}
 ```
 
 
