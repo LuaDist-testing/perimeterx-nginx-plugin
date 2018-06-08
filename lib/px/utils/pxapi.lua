@@ -29,7 +29,16 @@ function _M.new_request_object(call_reason)
     end
     risk.additional = {}
     risk.additional.s2s_call_reason = call_reason
+
+    if call_reason == 'cookie_validation_failed' or call_reason == 'cookie_expired' then
+        risk.additional.px_cookie = ngx.ctx.px_cookie
+        local dec_cookie = cjson.decode(ngx.ctx.px_cookie);
+        risk.vid = dec_cookie.v
+        risk.uuid = dec_cookie.u
+    end
+
     risk.additional.http_version = ngx.req.http_version()
+    risk.additional.module_version = 'NGINX Module v1.1'
 
     return risk
 end
