@@ -1,7 +1,11 @@
+[![Build Status](https://travis-ci.org/PerimeterX/perimeterx-nginx-plugin.svg?branch=master)](https://travis-ci.org/PerimeterX/perimeterx-nginx-plugin)
+
 ![image](https://s.perimeterx.net/logo.png)
 
 [PerimeterX](http://www.perimeterx.com) NGINX Lua Plugin
 =============================================================
+
+> Latest stable version: [v2.10.1](https://luarocks.org/modules/bendpx/perimeterx-nginx-plugin/2.10-1)
 
 Table of Contents
 -----------------
