@@ -1,7 +1,7 @@
 ---------------------------------------------
 -- PerimeterX(www.perimeterx.com) Nginx plugin
--- Version 1.1.0
--- Release date: 21.02.2015
+-- Version 1.1.4
+-- Release date: 07.11.2016
 ----------------------------------------------
 
 local http = require "resty.http"
@@ -9,7 +9,13 @@ local cjson = require "cjson"
 local px_config = require "px.pxconfig"
 local px_logger = require "px.utils.pxlogger"
 local px_headers = require "px.utils.pxheaders"
+local px_constants = require "px.utils.pxconstants"
 local px_debug = px_config.px_debug
+local ngx_req_get_method = ngx.req.get_method
+local ngx_req_get_headers = ngx.req.get_headers
+local ngx_req_http_version = ngx.req.http_version
+
+
 
 local _M = {}
 
@@ -23,7 +29,7 @@ function _M.new_request_object(call_reason)
     risk.request.ip = ngx.var.remote_addr
     risk.request.uri = ngx.var.uri
     risk.request.headers = {}
-    local h = ngx.req.get_headers()
+    local h = ngx_req_get_headers()
     for k, v in pairs(h) do
         risk.request.headers[#risk.request.headers + 1] = { ['name'] = k, ['value'] = v }
     end
@@ -32,15 +38,14 @@ function _M.new_request_object(call_reason)
 
     if call_reason == 'cookie_validation_failed' or call_reason == 'cookie_expired' then
         risk.additional.px_cookie = ngx.ctx.px_cookie
-        local dec_cookie = cjson.decode(ngx.ctx.px_cookie);
+        local dec_cookie = cjson.decode(ngx.ctx.px_cookie)
         risk.vid = dec_cookie.v
         risk.uuid = dec_cookie.u
     end
 
-    risk.additional.http_version = ngx.req.http_version()
-    risk.additional.http_method = ngx.req.get_method()
-
-    risk.additional.module_version = 'NGINX Module v1.1.2'
+    risk.additional.http_version = ngx_req_http_version()
+    risk.additional.http_method = ngx_req_get_method()
+    risk.additional.module_version = px_constants.MODULE_VERSION
 
     return risk
 end
@@ -51,8 +56,12 @@ end
 function _M.process(data)
     px_logger.debug("Processing server 2 server response: " .. cjson.encode(data.scores))
     px_headers.set_score_header(data.scores.non_human)
-    if data.scores.non_human >= px_config.blocking_score then
+
+    if data.uuid then
         ngx.ctx.uuid = data.uuid
+    end
+
+    if data.scores.non_human >= px_config.blocking_score then
         ngx.ctx.block_score = data.scores.non_human
         px_logger.error("Block reason - non human score: " .. data.scores.non_human)
         return false

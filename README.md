@@ -1,4 +1,4 @@
-![image](https://843a2be0f3083c485676508ff87beaf088a889c0-www.googledrive.com/host/0B_r_WoIa581oY01QMWNVUElyM2M)
+![image](http://media.marketwire.com/attachments/201604/34215_PerimeterX_logo.jpg)
 
 [PerimeterX](http://www.perimeterx.com) NGINX Lua Plugin
 =============================================================
@@ -8,31 +8,62 @@ Table of Contents
 
 -   [Usage](#usage)
   *   [Dependencies](#dependencies)
+  *   [Requirements](#requirements)
   *   [Installation](#installation)
   *   [Basic Usage Example](#basic-usage)
 -   [Configuration](#configuration)
   *   [Blocking Score](#blocking-score)
-  *   [Custom Block Action](#custom-block)
+  *   [Monitoring mode](#monitoring-mode)
   *   [Enable/Disable Captcha](#captcha-support)
   *   [Enabled Routes](#enabled-routes)
   *   [API Timeout Milliseconds](#api-timeout)
   *   [Send Page Activities](#send-page-activities)
   *   [Debug Mode](#debug-mode)
 -   [Whitelisting](#whitelisting)
--   [Common Requirements](#commonr)
 -   [Contributing](#contributing)
-  *   [Tests](#tests)
 
 <a name="Usage"></a>
 
 <a name="dependencies"></a> Dependencies
 ----------------------------------------
-- NGINX with ngx_lua support or Openresty
-- LuaJIT
+- [NGINX >= v1.7](http://nginx.org/) with [Lua NGINX Module](https://github.com/openresty/lua-nginx-module) support (>= v0.9.11) or [Openresty](https://openresty.org/en/)
+- [LuaJIT](http://luajit.org/)
 - [Lua CJSON](http://www.kyne.com.au/~mark/software/lua-cjson.php)
 - [Lua Resty HTTP](https://github.com/pintsized/lua-resty-http)
-- [Lua Resy Nettle](https://github.com/bungle/lua-resty-nettle)
+- [Lua Resty Nettle](https://github.com/bungle/lua-resty-nettle)
+- [GNU Nettle >= v3.2](https://www.lysator.liu.se/~nisse/nettle/)
 
+
+<a name="requirements"></a> Requirements
+-----------------------------------------------
+
+
+### Resolver
+Add the directive `resolver A.B.C.D;` to your NGINX configuration file in the http section. This is required so NGINX can resolve the PerimeterX API DNS name.
+
+### Lua Package Path
+Update your lua package path location in the HTTP section of your configuration to reflect where you have installed the modules.
+
+```
+lua_package_path "/usr/local/lib/lua/?.lua;;";
+```
+
+### Lua CA Certificates
+To support TLS to the collector you must point Lua to the trusted certificate location (actual location may differ between Linux distributions)
+
+```
+lua_ssl_trusted_certificate "/etc/ssl/certs/ca-certificates.crt";
+lua_ssl_verify_depth 3;
+```
+
+In CentOS/RHEL systems the CA bundle location may be located at `/etc/pki/tls/certs/ca-bundle.crt`
+
+### Lua Timer Initialization
+Add the init by lua script.
+
+```
+init_worker_by_lua_file "/usr/local/lib/lua/px/utils/pxtimer.lua";
+```
 
 <a name="installation"></a> Installation
 ----------------------------------------
@@ -57,13 +88,13 @@ events {
 
 http {
     lua_package_path "/usr/local/lib/lua/?.lua;;";
-    
+
     # -- initializing the perimeterx module -- #
     init_worker_by_lua_file "/usr/local/lib/lua/px/utils/pxtimer.lua";
-    
+
     lua_ssl_trusted_certificate "/etc/ssl/certs/ca-certificates.crt";
     lua_ssl_verify_depth 3;
-    
+
     resolver 8.8.8.8;
 
     server {
@@ -79,6 +110,16 @@ http {
         }
     }
 }
+```
+
+> Note: IP extraction according to your network setup is important. It is common to have a load balancer/proxy on top of your applications, in this case the PerimeterX module will send an internal IP as the user's. In order to perform processing and detection for server-to-server calls, PerimeterX module need the real user ip.
+
+for the NGINX module to work with the real user IP you need to set the `set_real_ip_from` NGINX directive in your nginx.conf, this will make sure the socket IP used in the nginx is not coming from one of the networks below.
+
+example:
+```
+  set_real_ip_from 172.0.0.0/8;
+  set_real_ip_from 107.178.0.0/16;	
 ```
 
 And modifying required configurations on `/usr/local/lib/lua/px/pxconfig.lua`:
@@ -102,7 +143,7 @@ Configuration options are set on `/usr/local/lib/lua/px/pxconfig.lua`:
 - cookie_secret
 - auth_token
 
-##### <a name="blocking-score"></a> Changing the Minimum Score for Blocking
+#### <a name="blocking-score"></a> Changing the Minimum Score for Blocking
 
 **default:** 70
 
@@ -110,8 +151,8 @@ Configuration options are set on `/usr/local/lib/lua/px/pxconfig.lua`:
 _M.blocking_score = 60
 ```
 
-#### <a name="custom-block"></a> Custom Blocking Actions
-By default the perimeterx module will block users crossing the block score you define, meaning, if a user cross the minimum block score he will get to the block page. the perimeterx plugin can be activated in monitor mode.
+#### <a name="monitoring-mode"></a> Monitoring Mode
+By default the PerimeterX module will block users crossing the block score threshold you define, meaning, if a user crosses the minimum block score he will get to the block page. The PerimeterX plugin can be activated in monitor mode.
 
 ```
 _M.block_enabled = false
@@ -176,7 +217,7 @@ Enables debug logging
 _M.px_debug = true
 ```
 
-<a name="whitelist"></a> Whitelisting
+<a name="whitelisting"></a> Whitelisting
 -----------------------------------------------
 Whitelisting (bypassing enforcement) is configured in the file `/usr/local/lib/lua/px/utils/pxfilter.lua`
 
@@ -186,37 +227,10 @@ There are three types of filters that can be configured.
 * URI prefix
 * IP addresses
 
-
-<a name="commonr"></a> Common Requirements
+<a name="nginxplus"></a> NGINX Plus
 -----------------------------------------------
-
-
-### Resolver
-Add the directive `resolver A.B.C.D;` to your NGINX configuration file in the http section. This is required so NGINX can resolve the PerimeterX collector DNS name.
-
-### Lua Package Path
-Update your lua package path location in the HTTP section of your configuration to reflect where you have installed the modules.
-
-```
-lua_package_path "/usr/local/lib/lua/?.lua;;"; 
-```
-
-### Lua CA Certificates
-To support TLS to the collector you must point Lua to the trusted certificate location (actual location may differ between Linux distributions)
-
-```
-lua_ssl_trusted_certificate "/etc/ssl/certs/ca-certificates.crt";
-lua_ssl_verify_depth 3;
-```
-
-### Lua Timer Initialization
-Add the init by lua script.
-
-```
-init_worker_by_lua_file "/usr/local/lib/lua/px/utils/pxtimer.lua";
-```
-
+The PerimeterX NGINX module is compatible with NGINX Plus. Users or administrators should install the NGINX Plus Lua dynamic module (LuaJIT).
 
 <a name="contributing"></a> Contributing
 ----------------------------------------
-
+All contributions are welcome. Send a pull request for review.

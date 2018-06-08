@@ -1,7 +1,7 @@
 ---------------------------------------------
 -- PerimeterX(www.perimeterx.com) Nginx plugin
--- Version 1.1.0
--- Release date: 21.02.2015
+-- Version 1.1.4
+-- Release date: 07.11.2016
 ----------------------------------------------
 
 local http = require "resty.http"

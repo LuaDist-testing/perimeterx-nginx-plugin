@@ -1,3 +1,8 @@
+---------------------------------------------
+-- PerimeterX(www.perimeterx.com) Nginx plugin
+-- Version 1.1.4
+-- Release date: 07.11.2016
+----------------------------------------------
 local _M = {}
 
 -- localized config
@@ -12,6 +17,7 @@ local score_header_enabled = px_config.score_header_enabled
 local score_header = px_config.score_header_name
 local ngx_req_clear_header = ngx.req.clear_header
 local ngx_req_set_header = ngx.req.set_header
+local ngx_req_get_headers = ngx.req.get_headers
 
 -- to_hex --
 -- takes one argument - a string
@@ -31,7 +37,7 @@ local function header_token()
 end
 
 function _M.validate_internal_request()
-    local px_internal = ngx.req.get_headers()['px_internal']
+    local px_internal = ngx_req_get_headers()['px_internal']
     if px_internal and px_internal == header_token() then
         px_logger.debug('Request is internal. PerimeterX processing skipped.')
         return true

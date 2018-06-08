@@ -1,16 +1,16 @@
 -- This file was automatically generated for the LuaDist project.
 
  package = "perimeterx-nginx-plugin"
- version = "1.1-2"
+ version = "1.1-4"
 -- LuaDist source
 source = {
-  tag = "1.1-2",
+  tag = "1.1-4",
   url = "git://github.com/LuaDist-testing/perimeterx-nginx-plugin.git"
 }
 -- Original source
 --  source = {
 --     url = "git://github.com/PerimeterX/perimeterx-nginx-plugin.git",
---     tag = "v1.1.2",
+--     tag = "v1.1.4",
 --  }
  description = {
     summary = "PerimeterX NGINX Lua Middleware.",
